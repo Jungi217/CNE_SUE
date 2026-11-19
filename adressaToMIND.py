@@ -1,6 +1,5 @@
 import argparse
 from bisect import bisect_right
-from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 import json
 from math import ceil
@@ -13,45 +12,40 @@ def clean_text(text):
     return ' '.join(text.split()) # text.split()은 공백·탭·줄바꿈을 기준으로 문자열을 나눕니다.
 
 
-def read_article(content_file):
-    with content_file.open(encoding='utf-8-sig') as content_records:
-        content = json.load(content_records)
-    fields = {item['field']: item['value'] for item in content['fields']}
-    if not all(field in fields for field in ('title', 'body', 'kw-category')):
-        return None
-
-    categories = fields['kw-category']
-    if isinstance(categories, str):
-        category, subcategory = categories, ''
-    else:
-        if not categories:
-            return None
-        category = categories[0]
-        subcategory = categories[1] if len(categories) > 1 else ''
-    body = fields['body']
-    return content['id'], {
-        'title': clean_text(fields['title']),
-        'body': clean_text(body if isinstance(body, str) else ' '.join(body[:5])),
-        'category': clean_text(category),
-        'subcategory': clean_text(subcategory),
-    }
-
-
 def process_news(content_directory):
-    content_files = sorted(path for path in Path(content_directory).iterdir() if path.is_file())
     news = {}
-    # map은 파일 순서를 유지하고, 작업을 나눠 대기 중인 파일 수를 제한한다.
-    batch_size = 1024
-    with ThreadPoolExecutor(max_workers=8) as readers:
-        for start in range(0, len(content_files), batch_size):
-            for result in readers.map(read_article, content_files[start:start + batch_size]):
-                if result is not None:
-                    article_id, article = result
-                    news[article_id] = article
+    for content_file in sorted(Path(content_directory).iterdir()):
+        if not content_file.is_file():
+            continue
+        with content_file.open(encoding='utf-8-sig') as content_records:
+            content = json.load(content_records)
+
+        fields = {item['field']: item['value'] for item in content['fields']}
+        if not all(field in fields for field in ('title', 'body', 'kw-category')):
+            continue
+
+        categories = fields['kw-category']
+        if isinstance(categories, str):
+            category, subcategory = categories, ''
+        else:
+            if not categories:
+                continue
+            category = categories[0]
+            subcategory = categories[1] if len(categories) > 1 else ''
+
+        article_id = content['id']
+        body = fields['body']
+        news[article_id] = {
+            'title': clean_text(fields['title']),
+            'body': clean_text(body if isinstance(body, str) else ' '.join(body[:5])),
+            'category': clean_text(category),
+            'subcategory': clean_text(subcategory),
+        }
 
     for index, article in enumerate(news.values(), start=1):
         article['news_id'] = f'N{index}'
     return news # news_id, title, body, category, subcategory
+
 
 def daily_event_files(event_directory):
     files_by_date = {}
@@ -171,7 +165,7 @@ def write_mind_files(news, user_clicks, output_directory, negative_sample_num=20
 
 def main():
     project_root = Path(__file__).resolve().parent
-    raw_directory = project_root / 'data/adressa'
+    raw_directory = project_root / 'data/adressa/raw'
     parser = argparse.ArgumentParser(description='Convert Adressa one-week JSONL to MIND TSV')
     parser.add_argument('--content_dir', type=Path, default=raw_directory / 'contentdata/home/lemeiz/content_refine')
     parser.add_argument('--event_dir', type=Path, default=raw_directory / 'one_week')
