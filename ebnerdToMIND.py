@@ -28,7 +28,7 @@ def process_news(articles_parquet_path, news_tsv_path):
     return articles.height
 
 
-def read_behaviors(behaviors_parquet_path, history_parquet_path):
+def process_behaviors(behaviors_parquet_path, history_parquet_path):
     history_columns = ['user_id', 'article_id_fixed', 'impression_time_fixed']
     history = pl.read_parquet(history_parquet_path, columns=history_columns)
 
@@ -116,7 +116,7 @@ def raw_file(root, standard_name, local_name):
 def main():
     project_root = Path(__file__).resolve().parent
     parser = argparse.ArgumentParser(description='Convert EB-NeRD Parquet to MIND TSV')
-    parser.add_argument('--raw-dir', type=Path, default=project_root / 'data/ebnerd/raw')
+    parser.add_argument('--raw-dir', type=Path, default=project_root / 'data/ebnerd/raw/ebnerd_small')
     parser.add_argument('--output-dir', type=Path, default=project_root / 'data/ebnerd')
     args = parser.parse_args()
     raw_root = args.raw_dir
@@ -133,12 +133,12 @@ def main():
         train_news = staged / 'train/news.tsv'
         news_count = process_news(articles, train_news)
 
-        train, dev = split_training(read_behaviors(train_behaviors, train_history))
+        train, dev = split_training(process_behaviors(train_behaviors, train_history))
         counts['train'] = write_behaviors(train, staged / 'train/behaviors.tsv')
         counts['dev'] = write_behaviors(dev, staged / 'dev/behaviors.tsv')
         del train, dev
 
-        test = read_behaviors(validation / 'behaviors.parquet', validation / 'history.parquet')
+        test = process_behaviors(validation / 'behaviors.parquet', validation / 'history.parquet')
         if test.is_empty():
             raise ValueError('The official validation split is empty')
         counts['test'] = write_behaviors(test, staged / 'test/behaviors.tsv')
