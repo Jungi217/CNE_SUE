@@ -19,8 +19,8 @@ Install Polars for EB-NeRD conversion with `python -m pip install polars==2.0.0`
 | Dataset | Preparation and splits |
 | --- | --- |
 | [MIND](https://msnews.github.io/) | Microsoft news impression logs. Follow the [NNR dataset setup](https://github.com/Veason-silverbullet/NNR#dataset-preparation) for MIND-small, MIND-200k, or MIND-large. |
-| [Adressa](https://reclab.idi.ntnu.no/dataset/) | Norwegian news click logs. Put the original `contentdata/` and `one_week/` folders under `data/adressa/`. The converter writes `data/mind/` and uses days 1 to 5 for click history and day 6 for training. Day 7 is split into 30% validation and 70% test. |
-| [EB-NeRD](https://github.com/jppol-ai/ebnerd-benchmark) | Danish news impression and click logs. Put `articles.parquet`, `train/`, and `validation/` under `data/ebnerd/raw/`. The converter writes TSVs to `data/ebnerd/`, uses the last approximately 10% of official training impressions for validation, and uses the official validation split as the local test set. |
+| [Adressa](https://reclab.idi.ntnu.no/dataset/) | Norwegian news click logs. Put the original `contentdata/` and `one_week/` folders under `data/adressa/raw/`. The converter writes `data/mind/` and uses days 1 to 5 for click history and day 6 for training. Day 7 is split into 30% validation and 70% test. |
+| [EB-NeRD](https://github.com/jppol-ai/ebnerd-benchmark) | Danish news impression and click logs. Put `articles.parquet`, `train/`, and `validation/` under `data/ebnerd/raw/ebnerd_small/`. The converter writes TSVs to `data/ebnerd/`, uses the last approximately 10% of official training impressions for validation, and uses the official validation split as the local test set. |
 
 ## Run
 
